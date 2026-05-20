@@ -1,0 +1,19 @@
+titles:
+  vip:
+    display-name: "&aVIP"
+    prefix: "&a[VIP] "
+    priority: 100
+    material: EMERALD
+    lore:
+      - "&7尊贵 VIP 称号。"
+      - "&7适合支持服务器的玩家。"
+    permission: "luckprefix.title.vip"
+  legend:
+    display-name: "&6Legend"
+    prefix: "&6[Legend] "
+    priority: 200
+    material: NETHER_STAR
+    lore:
+      - "&7传奇玩家称号。"
+      - "&7拥有更高的 LuckPerms prefix 权重。"
+    permission: "luckprefix.title.legend"

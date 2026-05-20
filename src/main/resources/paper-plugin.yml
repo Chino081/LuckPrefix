@@ -1,0 +1,33 @@
+name: LuckPrefix
+version: '${version}'
+main: com.example.luckprefix.LuckPrefixPlugin
+description: LuckPerms prefix based title manager with GUI and PlaceholderAPI support.
+api-version: '26.1.2'
+authors:
+  - Codex
+dependencies:
+  server:
+    LuckPerms:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
+permissions:
+  luckprefix.open:
+    description: Allows opening the LuckPrefix GUI.
+    default: true
+  luckprefix.reload:
+    description: Allows reloading LuckPrefix.
+    default: op
+  luckprefix.admin:
+    description: Allows managing other players' titles.
+    default: op
+  luckprefix.title.vip:
+    description: Allows using the vip title.
+    default: op
+  luckprefix.title.legend:
+    description: Allows using the legend title.
+    default: op

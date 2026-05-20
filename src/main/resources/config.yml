@@ -1,0 +1,70 @@
+gui:
+  title: "&8称号选择"
+  size: 27
+  title-slots:
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+  fill-empty-slots: true
+  filler-material: BLACK_STAINED_GLASS_PANE
+  selected-glow: true
+  clear-button:
+    enabled: true
+    slot: 22
+    material: BARRIER
+    name: "&c取消当前称号"
+    lore:
+      - "&7清除 LuckPrefix 当前设置的称号 prefix。"
+  previous-page:
+    slot: 18
+    material: ARROW
+    name: "&e上一页"
+  next-page:
+    slot: 26
+    material: ARROW
+    name: "&e下一页"
+
+sync-on-join-delay-ticks: 20
+
+placeholders:
+  none: ""
+  description-separator: " "
+
+messages:
+  prefix: "&8[&6LuckPrefix&8] "
+  no-permission: "%prefix%&c你没有权限。"
+  only-player: "%prefix%&c只有玩家可以执行这个命令。"
+  player-not-found: "%prefix%&c未找到玩家 &f%player%&c。"
+  title-not-found: "%prefix%&c称号 &f%title% &c不存在。"
+  title-no-permission: "%prefix%&c你尚未解锁这个称号。"
+  title-selected: "%prefix%&a已选择称号：%title%"
+  title-cleared: "%prefix%&a已清除当前称号。"
+  admin-title-selected: "%prefix%&a已为 &f%player% &a设置称号：%title%"
+  admin-title-cleared: "%prefix%&a已清除 &f%player% &a的称号。"
+  admin-title-granted: "%prefix%&a已给予 &f%player% &a称号权限：%title%"
+  title-created: "%prefix%&a已创建称号 &f%title%&a，描述默认为空。"
+  title-already-exists: "%prefix%&c称号 &f%title% &c已存在。"
+  invalid-title-id: "%prefix%&c称号 ID 只能包含小写字母、数字、下划线和短横线。"
+  invalid-priority: "%prefix%&c权重必须是一个整数。"
+  invalid-material: "%prefix%&c物品材质 &f%material% &c无效。"
+  reload-complete: "%prefix%&a配置已重载，并已同步在线玩家。"
+  operation-failed: "%prefix%&c操作失败：&f%reason%"
+  usage:
+    - "&6LuckPrefix 命令"
+    - "&e/luckprefix &7打开称号菜单"
+    - "&e/luckprefix clear &7清除自己的称号"
+    - "&e/luckprefix reload &7重载配置"
+    - "&e/luckprefix create <id> <displayName> <prefix> <priority> <material> &7创建称号"
+    - "&e/luckprefix give <player> <title> &7给予玩家称号权限"
+    - "&e/luckprefix add <player> <title> &7同 give"
+    - "&e/luckprefix set <player> <title> &7为玩家设置称号"
+    - "&e/luckprefix clear <player> &7清除玩家称号"
+
+status-lore:
+  selected: "&a当前正在使用"
+  available: "&e点击选择"
+  locked: "&c未解锁"
