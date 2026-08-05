@@ -68,3 +68,4 @@ status-lore:
   selected: "&a当前正在使用"
   available: "&e点击选择"
   locked: "&c未解锁"
+  locked-condition: "&7解锁条件: %condition%"

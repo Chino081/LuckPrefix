@@ -10,6 +10,7 @@ public record TitleDefinition(
     int priority,
     Material material,
     List<String> lore,
-    String permission
+    String permission,
+    String unlockCondition
 ) {
 }

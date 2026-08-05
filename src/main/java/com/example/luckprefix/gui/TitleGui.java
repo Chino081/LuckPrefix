@@ -6,6 +6,7 @@ import com.example.luckprefix.service.LuckPermsPrefixService;
 import com.example.luckprefix.service.PrefixOperationResult;
 import com.example.luckprefix.title.TitleDefinition;
 import com.example.luckprefix.title.TitleManager;
+import com.example.luckprefix.title.TitleUnlockService;
 import com.example.luckprefix.util.Text;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ public final class TitleGui implements Listener {
     private final TitleManager titleManager;
     private final YamlPlayerDataStore dataStore;
     private final LuckPermsPrefixService prefixService;
+    private final TitleUnlockService unlockService;
     private final NamespacedKey titleKey;
     private final NamespacedKey actionKey;
 
@@ -41,12 +43,14 @@ public final class TitleGui implements Listener {
         LuckPrefixPlugin plugin,
         TitleManager titleManager,
         YamlPlayerDataStore dataStore,
-        LuckPermsPrefixService prefixService
+        LuckPermsPrefixService prefixService,
+        TitleUnlockService unlockService
     ) {
         this.plugin = plugin;
         this.titleManager = titleManager;
         this.dataStore = dataStore;
         this.prefixService = prefixService;
+        this.unlockService = unlockService;
         this.titleKey = new NamespacedKey(plugin, "title_id");
         this.actionKey = new NamespacedKey(plugin, "action");
     }
@@ -144,7 +148,7 @@ public final class TitleGui implements Listener {
     }
 
     private void selectTitle(Player player, TitleDefinition title) {
-        if (!player.hasPermission(title.permission())) {
+        if (!unlockService.isUnlocked(player, title)) {
             plugin.sendMessage(player, "title-no-permission");
             return;
         }
@@ -202,8 +206,15 @@ public final class TitleGui implements Listener {
         }
 
         String statusPath;
-        if (!player.hasPermission(title.permission())) {
+        if (!unlockService.isUnlocked(player, title)) {
             statusPath = "status-lore.locked";
+            String condition = title.unlockCondition();
+            if (condition != null && !condition.isBlank()) {
+                String conditionLore = plugin.getConfig().getString("status-lore.locked-condition", "");
+                if (!conditionLore.isBlank()) {
+                    lore.add(Text.component(conditionLore.replace("%condition%", condition)));
+                }
+            }
         } else if (selected) {
             statusPath = "status-lore.selected";
             if (plugin.getConfig().getBoolean("gui.selected-glow", true)) {

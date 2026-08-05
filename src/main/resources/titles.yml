@@ -17,3 +17,15 @@ titles:
       - "&7传奇玩家称号。"
       - "&7拥有更高的 LuckPerms prefix 权重。"
     permission: "luckprefix.title.legend"
+  # 通过 PAPI 变量条件解锁：玩家 LuckPerms meta 标记 level >= 10 时自动解锁，
+  # 无需管理员手动 give 权限。条件为空时回退到 permission 节点判定。
+  veteran:
+    display-name: "&bVeteran"
+    prefix: "&b[Veteran] "
+    priority: 150
+    material: DIAMOND
+    lore:
+      - "&7老玩家称号。"
+      - "&7累计游戏经验达到要求后自动解锁。"
+    permission: "luckprefix.title.veteran"
+    unlock-condition: "%luckperms_meta_level% >= 10"

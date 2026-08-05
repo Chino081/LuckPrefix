@@ -31,3 +31,6 @@ permissions:
   luckprefix.title.legend:
     description: Allows using the legend title.
     default: op
+  luckprefix.title.veteran:
+    description: Allows using the veteran title.
+    default: op

@@ -55,7 +55,11 @@ public final class TitleManager {
 
             List<String> lore = titleSection.getStringList("lore");
             String permission = titleSection.getString("permission", "luckprefix.title." + id);
-            parsed.add(new TitleDefinition(id, displayName, prefix, priority, material, List.copyOf(lore), permission));
+            String unlockCondition = titleSection.getString("unlock-condition", "");
+            if (unlockCondition == null) {
+                unlockCondition = "";
+            }
+            parsed.add(new TitleDefinition(id, displayName, prefix, priority, material, List.copyOf(lore), permission, unlockCondition));
         }
 
         parsed.stream()
@@ -91,6 +95,9 @@ public final class TitleManager {
         config.set(path + ".material", title.material().name());
         config.set(path + ".lore", title.lore());
         config.set(path + ".permission", title.permission());
+        if (title.unlockCondition() != null && !title.unlockCondition().isBlank()) {
+            config.set(path + ".unlock-condition", title.unlockCondition());
+        }
 
         try {
             config.save(file);

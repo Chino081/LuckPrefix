@@ -7,6 +7,7 @@ import com.example.luckprefix.listener.PlayerJoinListener;
 import com.example.luckprefix.placeholder.LuckPrefixExpansion;
 import com.example.luckprefix.service.LuckPermsPrefixService;
 import com.example.luckprefix.title.TitleManager;
+import com.example.luckprefix.title.TitleUnlockService;
 import com.example.luckprefix.util.Text;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.HashMap;
@@ -21,10 +22,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class LuckPrefixPlugin extends JavaPlugin {
     private LuckPerms luckPerms;
     private TitleManager titleManager;
+    private TitleUnlockService unlockService;
     private YamlPlayerDataStore dataStore;
     private LuckPermsPrefixService prefixService;
     private TitleGui titleGui;
     private LuckPrefixExpansion placeholderExpansion;
+    private boolean placeholderApiAvailable;
 
     @Override
     public void onEnable() {
@@ -42,10 +45,11 @@ public final class LuckPrefixPlugin extends JavaPlugin {
         this.luckPerms = provider.getProvider();
         this.titleManager = new TitleManager(this);
         this.titleManager.reload();
+        this.unlockService = new TitleUnlockService(this);
         this.dataStore = new YamlPlayerDataStore(this);
         this.dataStore.load();
         this.prefixService = new LuckPermsPrefixService(this, luckPerms, dataStore);
-        this.titleGui = new TitleGui(this, titleManager, dataStore, prefixService);
+        this.titleGui = new TitleGui(this, titleManager, dataStore, prefixService, unlockService);
 
         getServer().getPluginManager().registerEvents(titleGui, this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, dataStore, titleManager, prefixService), this);
@@ -106,6 +110,10 @@ public final class LuckPrefixPlugin extends JavaPlugin {
         return titleManager;
     }
 
+    public TitleUnlockService unlockService() {
+        return unlockService;
+    }
+
     public YamlPlayerDataStore dataStore() {
         return dataStore;
     }
@@ -126,13 +134,18 @@ public final class LuckPrefixPlugin extends JavaPlugin {
     }
 
     private void registerPlaceholderExpansion() {
-        if (!getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+        this.placeholderApiAvailable = getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
+        if (!placeholderApiAvailable) {
             return;
         }
         this.placeholderExpansion = new LuckPrefixExpansion(this, titleManager, dataStore);
         if (placeholderExpansion.register()) {
             getLogger().info("Registered PlaceholderAPI expansion.");
         }
+    }
+
+    public boolean isPlaceholderApiAvailable() {
+        return placeholderApiAvailable;
     }
 
     private void saveResourceIfMissing(String name) {

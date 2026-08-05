@@ -292,7 +292,8 @@ public final class LuckPrefixCommand implements BasicCommand {
             priority,
             material,
             List.of(),
-            "luckprefix.title." + id
+            "luckprefix.title." + id,
+            ""
         );
 
         if (!titleManager.create(title)) {
