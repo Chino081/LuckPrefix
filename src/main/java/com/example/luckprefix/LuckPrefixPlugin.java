@@ -1,15 +1,19 @@
 package com.example.luckprefix;
 
 import com.example.luckprefix.command.LuckPrefixCommand;
+import com.example.luckprefix.config.ConfigUpdater;
 import com.example.luckprefix.data.YamlPlayerDataStore;
 import com.example.luckprefix.gui.TitleGui;
 import com.example.luckprefix.listener.PlayerJoinListener;
 import com.example.luckprefix.placeholder.LuckPrefixExpansion;
 import com.example.luckprefix.service.LuckPermsPrefixService;
+import com.example.luckprefix.title.CustomTitleService;
 import com.example.luckprefix.title.TitleManager;
 import com.example.luckprefix.title.TitleUnlockService;
 import com.example.luckprefix.util.Text;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +27,7 @@ public final class LuckPrefixPlugin extends JavaPlugin {
     private LuckPerms luckPerms;
     private TitleManager titleManager;
     private TitleUnlockService unlockService;
+    private CustomTitleService customTitleService;
     private YamlPlayerDataStore dataStore;
     private LuckPermsPrefixService prefixService;
     private TitleGui titleGui;
@@ -31,7 +36,7 @@ public final class LuckPrefixPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
+        setupConfig();
         saveResourceIfMissing("titles.yml");
         saveResourceIfMissing("data.yml");
 
@@ -49,10 +54,11 @@ public final class LuckPrefixPlugin extends JavaPlugin {
         this.dataStore = new YamlPlayerDataStore(this);
         this.dataStore.load();
         this.prefixService = new LuckPermsPrefixService(this, luckPerms, dataStore);
-        this.titleGui = new TitleGui(this, titleManager, dataStore, prefixService, unlockService);
+        this.customTitleService = new CustomTitleService(this, dataStore, prefixService);
+        this.titleGui = new TitleGui(this, titleManager, dataStore, prefixService, unlockService, customTitleService);
 
         getServer().getPluginManager().registerEvents(titleGui, this);
-        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, dataStore, titleManager, prefixService), this);
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this, dataStore, titleManager, prefixService, customTitleService), this);
 
         registerCommand();
         registerPlaceholderExpansion();
@@ -114,6 +120,10 @@ public final class LuckPrefixPlugin extends JavaPlugin {
         return unlockService;
     }
 
+    public CustomTitleService customTitleService() {
+        return customTitleService;
+    }
+
     public YamlPlayerDataStore dataStore() {
         return dataStore;
     }
@@ -127,7 +137,7 @@ public final class LuckPrefixPlugin extends JavaPlugin {
     }
 
     private void registerCommand() {
-        LuckPrefixCommand command = new LuckPrefixCommand(this, titleManager, dataStore, prefixService, titleGui);
+        LuckPrefixCommand command = new LuckPrefixCommand(this, titleManager, dataStore, prefixService, titleGui, customTitleService);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
             event.registrar().register("luckprefix", "Open the LuckPrefix title menu.", List.of("lpp"), command)
         );
@@ -138,7 +148,7 @@ public final class LuckPrefixPlugin extends JavaPlugin {
         if (!placeholderApiAvailable) {
             return;
         }
-        this.placeholderExpansion = new LuckPrefixExpansion(this, titleManager, dataStore);
+        this.placeholderExpansion = new LuckPrefixExpansion(this, titleManager, dataStore, customTitleService);
         if (placeholderExpansion.register()) {
             getLogger().info("Registered PlaceholderAPI expansion.");
         }
@@ -151,6 +161,41 @@ public final class LuckPrefixPlugin extends JavaPlugin {
     private void saveResourceIfMissing(String name) {
         if (!getDataFolder().toPath().resolve(name).toFile().exists()) {
             saveResource(name, false);
+        }
+    }
+
+    /**
+     * 初始化并增量合并 config.yml。
+     *
+     * <p>首次运行：生成默认配置。已存在：将 jar 内默认配置中缺失的新键
+     * 补齐到用户文件，不覆盖用户已有修改。</p>
+     */
+    private void setupConfig() {
+        saveDefaultConfig();
+        List<String> added = mergeMissingFromResource("config.yml", getConfig());
+        if (!added.isEmpty()) {
+            try {
+                getConfig().save(new java.io.File(getDataFolder(), "config.yml"));
+                getLogger().info("Merged " + added.size() + " new config key(s) into config.yml: " + String.join(", ", added));
+                reloadConfig();
+            } catch (IOException exception) {
+                getLogger().warning("Could not save merged config.yml: " + exception.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 用 jar 内的默认资源合并用户磁盘配置，返回本次新增的键路径列表。
+     */
+    private List<String> mergeMissingFromResource(String resource, org.bukkit.configuration.file.FileConfiguration userConfig) {
+        try (InputStream input = getResource(resource)) {
+            if (input == null) {
+                return List.of();
+            }
+            return ConfigUpdater.mergeMissing(resource, userConfig, input);
+        } catch (IOException exception) {
+            getLogger().warning("Could not read default resource '" + resource + "': " + exception.getMessage());
+            return List.of();
         }
     }
 }

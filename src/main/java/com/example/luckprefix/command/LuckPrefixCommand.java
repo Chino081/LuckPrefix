@@ -5,11 +5,14 @@ import com.example.luckprefix.data.YamlPlayerDataStore;
 import com.example.luckprefix.gui.TitleGui;
 import com.example.luckprefix.service.LuckPermsPrefixService;
 import com.example.luckprefix.service.PrefixOperationResult;
+import com.example.luckprefix.title.CustomTitleService;
 import com.example.luckprefix.title.TitleDefinition;
 import com.example.luckprefix.title.TitleManager;
+import com.example.luckprefix.title.ValidationResult;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -28,19 +31,22 @@ public final class LuckPrefixCommand implements BasicCommand {
     private final YamlPlayerDataStore dataStore;
     private final LuckPermsPrefixService prefixService;
     private final TitleGui titleGui;
+    private final CustomTitleService customTitleService;
 
     public LuckPrefixCommand(
         LuckPrefixPlugin plugin,
         TitleManager titleManager,
         YamlPlayerDataStore dataStore,
         LuckPermsPrefixService prefixService,
-        TitleGui titleGui
+        TitleGui titleGui,
+        CustomTitleService customTitleService
     ) {
         this.plugin = plugin;
         this.titleManager = titleManager;
         this.dataStore = dataStore;
         this.prefixService = prefixService;
         this.titleGui = titleGui;
+        this.customTitleService = customTitleService;
     }
 
     @Override
@@ -59,6 +65,7 @@ public final class LuckPrefixCommand implements BasicCommand {
             case "set" -> set(sender, args);
             case "give", "add" -> give(sender, args);
             case "create" -> create(sender, args);
+            case "custom" -> custom(sender, args);
             case "help" -> plugin.sendUsage(sender);
             default -> plugin.sendUsage(sender);
         }
@@ -83,8 +90,17 @@ public final class LuckPrefixCommand implements BasicCommand {
                 suggestions.add("create");
                 suggestions.add("clear");
             }
+            if (sender.hasPermission("luckprefix.custom")) {
+                suggestions.add("custom");
+            }
             suggestions.add("help");
             return matching(suggestions, args[0]);
+        }
+
+        if (args.length == 2 && sender.hasPermission("luckprefix.custom") && args[0].equalsIgnoreCase("custom")) {
+            suggestions.add("set");
+            suggestions.add("clear");
+            return matching(suggestions, args[1]);
         }
 
         if (args.length == 2 && sender.hasPermission("luckprefix.admin") && is(args[0], "set", "give", "add", "clear")) {
@@ -139,10 +155,17 @@ public final class LuckPrefixCommand implements BasicCommand {
         plugin.reloadLuckPrefix();
         for (Player player : Bukkit.getOnlinePlayers()) {
             dataStore.get(player.getUniqueId()).ifPresent(data ->
-                prefixService.syncStoredTitle(player.getUniqueId(), titleManager.get(data.titleId()))
+                prefixService.syncStoredTitle(player.getUniqueId(), resolveTitle(player.getUniqueId(), data.titleId()))
             );
         }
         plugin.sendMessage(sender, "reload-complete");
+    }
+
+    private Optional<TitleDefinition> resolveTitle(UUID uuid, String titleId) {
+        if (CustomTitleService.CUSTOM_ID.equalsIgnoreCase(titleId)) {
+            return dataStore.getCustom(uuid).map(customTitleService::buildDefinition);
+        }
+        return titleManager.get(titleId);
     }
 
     private void clear(CommandSender sender, String[] args) {
@@ -302,6 +325,68 @@ public final class LuckPrefixCommand implements BasicCommand {
         }
 
         plugin.sendMessage(sender, "title-created", Map.of("title", id));
+    }
+
+    private void custom(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            plugin.sendMessage(sender, "only-player");
+            return;
+        }
+        if (!customTitleService.isEnabled()) {
+            plugin.sendMessage(sender, "custom-disabled");
+            return;
+        }
+        if (!player.hasPermission("luckprefix.custom")) {
+            plugin.sendMessage(player, "no-permission");
+            return;
+        }
+
+        if (args.length < 2) {
+            plugin.sendUsage(sender);
+            return;
+        }
+
+        String action = args[1].toLowerCase(Locale.ROOT);
+        if (args.length == 2 && action.equals("clear")) {
+            customTitleService.clearCustom(player.getUniqueId()).thenAccept(result ->
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (!result.success()) {
+                        plugin.sendMessage(player, "operation-failed", Map.of("reason", result.reason()));
+                        return;
+                    }
+                    plugin.sendMessage(player, "custom-cleared");
+                })
+            );
+            return;
+        }
+
+        if (args.length >= 3 && action.equals("set")) {
+            String content = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+            ValidationResult validation = customTitleService.validate(content);
+            if (!validation.success()) {
+                plugin.sendMessage(player, validation.messagePath(), validation.replacements());
+                return;
+            }
+            customTitleService.setContent(player.getUniqueId(), content);
+            customTitleService.applyCustom(player.getUniqueId()).thenAccept(result ->
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (!player.isOnline()) {
+                        return;
+                    }
+                    if (!result.success()) {
+                        plugin.sendMessage(player, "operation-failed", Map.of("reason", result.reason()));
+                        return;
+                    }
+                    plugin.sendMessage(player, "custom-set", Map.of("title", content.trim()));
+                })
+            );
+            return;
+        }
+
+        plugin.sendUsage(sender);
     }
 
     private void sendAdminSetResult(CommandSender sender, String playerName, TitleDefinition title, PrefixOperationResult result) {

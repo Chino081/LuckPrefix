@@ -3,7 +3,11 @@ package com.example.luckprefix.listener;
 import com.example.luckprefix.LuckPrefixPlugin;
 import com.example.luckprefix.data.YamlPlayerDataStore;
 import com.example.luckprefix.service.LuckPermsPrefixService;
+import com.example.luckprefix.title.CustomTitleService;
+import com.example.luckprefix.title.TitleDefinition;
 import com.example.luckprefix.title.TitleManager;
+import java.util.Optional;
+import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -15,17 +19,20 @@ public final class PlayerJoinListener implements Listener {
     private final YamlPlayerDataStore dataStore;
     private final TitleManager titleManager;
     private final LuckPermsPrefixService prefixService;
+    private final CustomTitleService customTitleService;
 
     public PlayerJoinListener(
         LuckPrefixPlugin plugin,
         YamlPlayerDataStore dataStore,
         TitleManager titleManager,
-        LuckPermsPrefixService prefixService
+        LuckPermsPrefixService prefixService,
+        CustomTitleService customTitleService
     ) {
         this.plugin = plugin;
         this.dataStore = dataStore;
         this.titleManager = titleManager;
         this.prefixService = prefixService;
+        this.customTitleService = customTitleService;
     }
 
     @EventHandler
@@ -34,8 +41,15 @@ public final class PlayerJoinListener implements Listener {
         int delay = Math.max(0, plugin.getConfig().getInt("sync-on-join-delay-ticks", 20));
         Bukkit.getScheduler().runTaskLater(plugin, () ->
             dataStore.get(player.getUniqueId()).ifPresent(data ->
-                prefixService.syncStoredTitle(player.getUniqueId(), titleManager.get(data.titleId()))
+                prefixService.syncStoredTitle(player.getUniqueId(), resolveTitle(player.getUniqueId(), data.titleId()))
             ), delay
         );
+    }
+
+    private Optional<TitleDefinition> resolveTitle(UUID uuid, String titleId) {
+        if (CustomTitleService.CUSTOM_ID.equalsIgnoreCase(titleId)) {
+            return dataStore.getCustom(uuid).map(customTitleService::buildDefinition);
+        }
+        return titleManager.get(titleId);
     }
 }

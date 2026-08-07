@@ -1,8 +1,10 @@
 package com.example.luckprefix.placeholder;
 
 import com.example.luckprefix.LuckPrefixPlugin;
+import com.example.luckprefix.data.PlayerCustomTitle;
 import com.example.luckprefix.data.PlayerTitleData;
 import com.example.luckprefix.data.YamlPlayerDataStore;
+import com.example.luckprefix.title.CustomTitleService;
 import com.example.luckprefix.title.TitleDefinition;
 import com.example.luckprefix.title.TitleManager;
 import java.util.Locale;
@@ -16,11 +18,18 @@ public final class LuckPrefixExpansion extends PlaceholderExpansion {
     private final LuckPrefixPlugin plugin;
     private final TitleManager titleManager;
     private final YamlPlayerDataStore dataStore;
+    private final CustomTitleService customTitleService;
 
-    public LuckPrefixExpansion(LuckPrefixPlugin plugin, TitleManager titleManager, YamlPlayerDataStore dataStore) {
+    public LuckPrefixExpansion(
+        LuckPrefixPlugin plugin,
+        TitleManager titleManager,
+        YamlPlayerDataStore dataStore,
+        CustomTitleService customTitleService
+    ) {
         this.plugin = plugin;
         this.titleManager = titleManager;
         this.dataStore = dataStore;
+        this.customTitleService = customTitleService;
     }
 
     @Override
@@ -50,7 +59,11 @@ public final class LuckPrefixExpansion extends PlaceholderExpansion {
         }
 
         Optional<PlayerTitleData> data = dataStore.get(player.getUniqueId());
-        Optional<TitleDefinition> title = data.flatMap(stored -> titleManager.get(stored.titleId()));
+        boolean isCustom = data.isPresent()
+            && CustomTitleService.CUSTOM_ID.equalsIgnoreCase(data.get().titleId());
+        Optional<TitleDefinition> title = isCustom
+            ? dataStore.getCustom(player.getUniqueId()).map(customTitleService::buildDefinition)
+            : data.flatMap(stored -> titleManager.get(stored.titleId()));
         String key = params.toLowerCase(Locale.ROOT);
 
         return switch (key) {
@@ -58,6 +71,9 @@ public final class LuckPrefixExpansion extends PlaceholderExpansion {
             case "name" -> title.map(TitleDefinition::displayName).orElse(none());
             case "prefix" -> title.map(TitleDefinition::prefix).orElse(none());
             case "description" -> title.map(this::description).orElse(none());
+            case "custom" -> dataStore.getCustom(player.getUniqueId())
+                .map(PlayerCustomTitle::content)
+                .orElse(none());
             default -> null;
         };
     }

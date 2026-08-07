@@ -25,6 +25,9 @@ permissions:
   luckprefix.admin:
     description: Allows managing other players' titles.
     default: op
+  luckprefix.custom:
+    description: Allows using custom title command.
+    default: op
   luckprefix.title.vip:
     description: Allows using the vip title.
     default: op

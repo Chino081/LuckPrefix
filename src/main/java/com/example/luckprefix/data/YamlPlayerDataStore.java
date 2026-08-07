@@ -14,6 +14,7 @@ public final class YamlPlayerDataStore {
     private final LuckPrefixPlugin plugin;
     private final File file;
     private final Map<UUID, PlayerTitleData> cache = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerCustomTitle> customCache = new ConcurrentHashMap<>();
     private YamlConfiguration yaml;
 
     public YamlPlayerDataStore(LuckPrefixPlugin plugin) {
@@ -23,6 +24,7 @@ public final class YamlPlayerDataStore {
 
     public synchronized void load() {
         cache.clear();
+        customCache.clear();
         this.yaml = YamlConfiguration.loadConfiguration(file);
 
         ConfigurationSection players = yaml.getConfigurationSection("players");
@@ -42,6 +44,12 @@ public final class YamlPlayerDataStore {
                 if (titleId != null && !titleId.isBlank()) {
                     cache.put(uuid, new PlayerTitleData(titleId, prefix, priority));
                 }
+
+                String customContent = yaml.getString(path + ".custom-title");
+                String customPrefix = yaml.getString(path + ".custom-prefix", "");
+                if (customContent != null && !customContent.isBlank()) {
+                    customCache.put(uuid, new PlayerCustomTitle(customContent, customPrefix));
+                }
             } catch (IllegalArgumentException ignored) {
                 plugin.getLogger().warning("Ignoring invalid UUID in data.yml: " + key);
             }
@@ -50,6 +58,10 @@ public final class YamlPlayerDataStore {
 
     public Optional<PlayerTitleData> get(UUID uuid) {
         return Optional.ofNullable(cache.get(uuid));
+    }
+
+    public Optional<PlayerCustomTitle> getCustom(UUID uuid) {
+        return Optional.ofNullable(customCache.get(uuid));
     }
 
     public synchronized void set(UUID uuid, PlayerTitleData data) {
@@ -61,8 +73,25 @@ public final class YamlPlayerDataStore {
         save();
     }
 
+    public synchronized void setCustom(UUID uuid, PlayerCustomTitle data) {
+        customCache.put(uuid, data);
+        String path = "players." + uuid;
+        yaml.set(path + ".custom-title", data.content());
+        yaml.set(path + ".custom-prefix", data.prefix());
+        save();
+    }
+
+    public synchronized void clearCustom(UUID uuid) {
+        customCache.remove(uuid);
+        String path = "players." + uuid;
+        yaml.set(path + ".custom-title", null);
+        yaml.set(path + ".custom-prefix", null);
+        save();
+    }
+
     public synchronized void clear(UUID uuid) {
         cache.remove(uuid);
+        customCache.remove(uuid);
         yaml.set("players." + uuid, null);
         save();
     }

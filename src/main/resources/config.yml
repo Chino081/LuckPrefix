@@ -19,6 +19,15 @@ gui:
     name: "&c取消当前称号"
     lore:
       - "&7清除 LuckPrefix 当前设置的称号 prefix。"
+  edit-custom-button:
+    enabled: true
+    slot: 4
+    material: WRITABLE_BOOK
+    name: "&6修改自定义称号"
+    lore:
+      - "&7点击后在聊天框输入自定义称号内容。"
+      - "&7支持颜色代码，例如 &b无敌 &7或 &#FF5555无敌。"
+      - "&7输入 &ccancel &7取消。"
   previous-page:
     slot: 18
     material: ARROW
@@ -29,6 +38,18 @@ gui:
     name: "&e下一页"
 
 sync-on-join-delay-ticks: 20
+
+custom-title:
+  enabled: true
+  max-length: 5
+  priority: 50
+  material: WRITABLE_BOOK
+  blocked-words:
+    - "服主"
+    - "腐竹"
+    - "管理"
+    - "OP"
+    - "爸爸"
 
 placeholders:
   none: ""
@@ -53,12 +74,25 @@ messages:
   invalid-material: "%prefix%&c物品材质 &f%material% &c无效。"
   reload-complete: "%prefix%&a配置已重载，并已同步在线玩家。"
   operation-failed: "%prefix%&c操作失败：&f%reason%"
+  custom-disabled: "%prefix%&c自定义称号功能未开启。"
+  custom-invalid: "%prefix%&c自定义称号无效：&f%reason%"
+  custom-empty: "%prefix%&c自定义称号内容不能为空。"
+  custom-only-color: "%prefix%&c自定义称号内容不能只包含颜色代码。"
+  custom-invalid-chars: "%prefix%&c自定义称号只能包含中文、英文字母和数字，禁止使用特殊符号。"
+  custom-too-long: "%prefix%&c自定义称号长度不能超过 &f%limit% &c个字（中文）或 &f%max% &c个字符（英文）。"
+  custom-set: "%prefix%&a已设置自定义称号：%title%"
+  custom-cleared: "%prefix%&a已清除自定义称号。"
+  custom-edit-prompt: "%prefix%&e请在聊天框输入自定义称号内容，输入 &ccancel &e取消。"
+  custom-edit-cancelled: "%prefix%&a已取消修改自定义称号。"
+  custom-blocked: "%prefix%&c自定义称号包含屏蔽词：&f%word%&c。"
   usage:
     - "&6LuckPrefix 命令"
     - "&e/luckprefix &7打开称号菜单"
     - "&e/luckprefix clear &7清除自己的称号"
     - "&e/luckprefix reload &7重载配置"
     - "&e/luckprefix create <id> <displayName> <prefix> <priority> <material> &7创建称号"
+    - "&e/luckprefix custom set <内容> &7设置自定义称号（可含颜色代码，如 &b无敌）"
+    - "&e/luckprefix custom clear &7清除自定义称号"
     - "&e/luckprefix give <player> <title> &7给予玩家称号权限"
     - "&e/luckprefix add <player> <title> &7同 give"
     - "&e/luckprefix set <player> <title> &7为玩家设置称号"
