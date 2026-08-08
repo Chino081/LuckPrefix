@@ -6,6 +6,7 @@ import com.example.luckprefix.data.YamlPlayerDataStore;
 import com.example.luckprefix.gui.TitleGui;
 import com.example.luckprefix.listener.PlayerJoinListener;
 import com.example.luckprefix.placeholder.LuckPrefixExpansion;
+import com.example.luckprefix.service.EconomyService;
 import com.example.luckprefix.service.LuckPermsPrefixService;
 import com.example.luckprefix.title.CustomTitleService;
 import com.example.luckprefix.title.TitleManager;
@@ -28,6 +29,7 @@ public final class LuckPrefixPlugin extends JavaPlugin {
     private TitleManager titleManager;
     private TitleUnlockService unlockService;
     private CustomTitleService customTitleService;
+    private EconomyService economyService;
     private YamlPlayerDataStore dataStore;
     private LuckPermsPrefixService prefixService;
     private TitleGui titleGui;
@@ -54,7 +56,9 @@ public final class LuckPrefixPlugin extends JavaPlugin {
         this.dataStore = new YamlPlayerDataStore(this);
         this.dataStore.load();
         this.prefixService = new LuckPermsPrefixService(this, luckPerms, dataStore);
-        this.customTitleService = new CustomTitleService(this, dataStore, prefixService);
+        this.economyService = new EconomyService(this);
+        this.economyService.load();
+        this.customTitleService = new CustomTitleService(this, dataStore, prefixService, economyService);
         this.titleGui = new TitleGui(this, titleManager, dataStore, prefixService, unlockService, customTitleService);
 
         getServer().getPluginManager().registerEvents(titleGui, this);
@@ -79,6 +83,9 @@ public final class LuckPrefixPlugin extends JavaPlugin {
         reloadConfig();
         titleManager.reload();
         dataStore.load();
+        if (economyService != null) {
+            economyService.load();
+        }
     }
 
     public void sendMessage(CommandSender sender, String path) {
@@ -122,6 +129,10 @@ public final class LuckPrefixPlugin extends JavaPlugin {
 
     public CustomTitleService customTitleService() {
         return customTitleService;
+    }
+
+    public EconomyService economyService() {
+        return economyService;
     }
 
     public YamlPlayerDataStore dataStore() {

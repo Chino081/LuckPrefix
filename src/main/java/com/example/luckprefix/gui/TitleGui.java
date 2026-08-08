@@ -224,6 +224,27 @@ public final class TitleGui implements Listener {
             );
             return;
         }
+        // 扣费检查（异步线程中不能直接操作 Vault，切到主线程扣费）
+        double cost = customTitleService.cost();
+        if (customTitleService.isEconomyRequired() && !customTitleService.canAfford(player)) {
+            Bukkit.getScheduler().runTask(plugin, () ->
+                plugin.sendMessage(player, "custom-no-money", Map.of("cost", String.valueOf((long) cost)))
+            );
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            if (!customTitleService.charge(player)) {
+                plugin.sendMessage(player, "custom-charge-failed");
+                return;
+            }
+            completeCustomSet(player, content);
+        });
+    }
+
+    private void completeCustomSet(Player player, String content) {
         customTitleService.setContent(player.getUniqueId(), content);
         customTitleService.applyCustom(player.getUniqueId()).thenAccept(result ->
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -234,7 +255,10 @@ public final class TitleGui implements Listener {
                     plugin.sendMessage(player, "operation-failed", Map.of("reason", result.reason()));
                     return;
                 }
-                plugin.sendMessage(player, "custom-set", Map.of("title", content.trim()));
+                plugin.sendMessage(player, "custom-set", Map.of(
+                    "title", content.trim(),
+                    "cost", String.valueOf((long) customTitleService.cost())
+                ));
             })
         );
     }
@@ -327,8 +351,11 @@ public final class TitleGui implements Listener {
 
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(Text.component(plugin.getConfig().getString(path + ".name", action)));
+        String name = plugin.getConfig().getString(path + ".name", action);
+        meta.displayName(Text.component(name));
+        String costStr = String.valueOf((long) customTitleService.cost());
         List<net.kyori.adventure.text.Component> lore = plugin.getConfig().getStringList(path + ".lore").stream()
+            .map(line -> line.replace("%cost%", costStr))
             .map(Text::component)
             .toList();
         meta.lore(lore);

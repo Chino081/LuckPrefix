@@ -15,6 +15,9 @@ dependencies {
     compileOnly 'io.papermc.paper:paper-api:26.1.2.build.64-stable'
     compileOnly 'net.luckperms:api:5.5'
     compileOnly 'me.clip:placeholderapi:2.11.6'
+    compileOnly('com.github.MilkBowl:VaultAPI:1.7') {
+        exclude group: 'org.bukkit', module: 'bukkit'
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {

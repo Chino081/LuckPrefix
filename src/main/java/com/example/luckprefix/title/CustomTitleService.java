@@ -3,6 +3,7 @@ package com.example.luckprefix.title;
 import com.example.luckprefix.LuckPrefixPlugin;
 import com.example.luckprefix.data.PlayerCustomTitle;
 import com.example.luckprefix.data.YamlPlayerDataStore;
+import com.example.luckprefix.service.EconomyService;
 import com.example.luckprefix.service.LuckPermsPrefixService;
 import com.example.luckprefix.service.PrefixOperationResult;
 import com.example.luckprefix.util.Text;
@@ -26,11 +27,18 @@ public final class CustomTitleService {
     private final LuckPrefixPlugin plugin;
     private final YamlPlayerDataStore dataStore;
     private final LuckPermsPrefixService prefixService;
+    private final EconomyService economyService;
 
-    public CustomTitleService(LuckPrefixPlugin plugin, YamlPlayerDataStore dataStore, LuckPermsPrefixService prefixService) {
+    public CustomTitleService(
+        LuckPrefixPlugin plugin,
+        YamlPlayerDataStore dataStore,
+        LuckPermsPrefixService prefixService,
+        EconomyService economyService
+    ) {
         this.plugin = plugin;
         this.dataStore = dataStore;
         this.prefixService = prefixService;
+        this.economyService = economyService;
     }
 
     public boolean isEnabled() {
@@ -39,6 +47,43 @@ public final class CustomTitleService {
 
     public int maxLength() {
         return Math.max(1, plugin.getConfig().getInt("custom-title.max-length", 5));
+    }
+
+    /**
+     * 返回修改自定义称号的费用。
+     */
+    public double cost() {
+        return plugin.getConfig().getDouble("custom-title.cost", 50000.0);
+    }
+
+    /**
+     * 检查经济系统是否可用。若费用为 0 或 Vault 未启用则视为无需扣费。
+     */
+    public boolean isEconomyRequired() {
+        double cost = cost();
+        return cost > 0 && economyService != null && economyService.isAvailable();
+    }
+
+    /**
+     * 检查玩家余额是否足够支付费用。
+     */
+    public boolean canAfford(org.bukkit.OfflinePlayer player) {
+        double cost = cost();
+        if (cost <= 0 || economyService == null || !economyService.isAvailable()) {
+            return true;
+        }
+        return economyService.hasEnough(player, cost);
+    }
+
+    /**
+     * 扣除玩家费用。返回 true 表示成功（费用为 0 或扣款成功）。
+     */
+    public boolean charge(org.bukkit.OfflinePlayer player) {
+        double cost = cost();
+        if (cost <= 0 || economyService == null || !economyService.isAvailable()) {
+            return true;
+        }
+        return economyService.withdraw(player, cost);
     }
 
     /** 允许的字符：中文、英文大小写、数字。颜色代码由 Text.stripColor 统一剥离后再校验。 */

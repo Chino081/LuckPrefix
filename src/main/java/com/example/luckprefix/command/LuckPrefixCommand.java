@@ -370,6 +370,16 @@ public final class LuckPrefixCommand implements BasicCommand {
                 plugin.sendMessage(player, validation.messagePath(), validation.replacements());
                 return;
             }
+            // 扣费检查
+            double cost = customTitleService.cost();
+            if (customTitleService.isEconomyRequired() && !customTitleService.canAfford(player)) {
+                plugin.sendMessage(player, "custom-no-money", Map.of("cost", String.valueOf((long) cost)));
+                return;
+            }
+            if (!customTitleService.charge(player)) {
+                plugin.sendMessage(player, "custom-charge-failed");
+                return;
+            }
             customTitleService.setContent(player.getUniqueId(), content);
             customTitleService.applyCustom(player.getUniqueId()).thenAccept(result ->
                 Bukkit.getScheduler().runTask(plugin, () -> {
@@ -380,7 +390,10 @@ public final class LuckPrefixCommand implements BasicCommand {
                         plugin.sendMessage(player, "operation-failed", Map.of("reason", result.reason()));
                         return;
                     }
-                    plugin.sendMessage(player, "custom-set", Map.of("title", content.trim()));
+                    plugin.sendMessage(player, "custom-set", Map.of(
+                        "title", content.trim(),
+                        "cost", String.valueOf((long) customTitleService.cost())
+                    ));
                 })
             );
             return;

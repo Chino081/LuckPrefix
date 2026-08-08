@@ -17,6 +17,10 @@ dependencyResolutionManagement {
             name = 'PlaceholderAPI'
             url = 'https://repo.extendedclip.com/releases/'
         }
+        maven {
+            name = 'JitPack'
+            url = 'https://jitpack.io'
+        }
     }
 }
 

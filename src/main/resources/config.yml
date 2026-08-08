@@ -28,6 +28,7 @@ gui:
       - "&7点击后在聊天框输入自定义称号内容。"
       - "&7支持颜色代码，例如 &b无敌 &7或 &#FF5555无敌。"
       - "&7输入 &ccancel &7取消。"
+      - "&7费用：&f%cost% &7游戏币"
   previous-page:
     slot: 18
     material: ARROW
@@ -39,9 +40,13 @@ gui:
 
 sync-on-join-delay-ticks: 20
 
+economy:
+  enabled: true
+
 custom-title:
   enabled: true
   max-length: 5
+  cost: 10000
   priority: 50
   material: WRITABLE_BOOK
   blocked-words:
@@ -80,8 +85,10 @@ messages:
   custom-only-color: "%prefix%&c自定义称号内容不能只包含颜色代码。"
   custom-invalid-chars: "%prefix%&c自定义称号只能包含中文、英文字母和数字，禁止使用特殊符号。"
   custom-too-long: "%prefix%&c自定义称号长度不能超过 &f%limit% &c个字（中文）或 &f%max% &c个字符（英文）。"
-  custom-set: "%prefix%&a已设置自定义称号：%title%"
+  custom-set: "%prefix%&a已设置自定义称号：%title%&a，扣费 &f%cost% &a游戏币。"
   custom-cleared: "%prefix%&a已清除自定义称号。"
+  custom-no-money: "%prefix%&c游戏币不足，需要 &f%cost% &c游戏币。"
+  custom-charge-failed: "%prefix%&c扣款失败，请稍后再试。"
   custom-edit-prompt: "%prefix%&e请在聊天框输入自定义称号内容，输入 &ccancel &e取消。"
   custom-edit-cancelled: "%prefix%&a已取消修改自定义称号。"
   custom-blocked: "%prefix%&c自定义称号包含屏蔽词：&f%word%&c。"
